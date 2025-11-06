@@ -27,24 +27,24 @@ Given any match, we will engineer features over the last 5 games a team has play
 - Fouls committed
 
 ## Project Structure
-premier-league-predictor/
-├── data/
-│   ├── raw/                     # Original CSVs (as downloaded)
-│   ├── processed/               # Cleaned and feature-engineered datasets
-│
-├── notebooks/                   # Exploratory work and visualization
-│
-├── src/                         # Library of modules
-│   ├── data/
-│   │   ├── load_data.py         # Load & clean raw CSVs into DataFrames
-│   │   ├── build_features.py    # Compute features related to form
-│   │   └── utils.py             # Shared helper functions
-│   ├── models/
-│   │   ├── train_model.py       # Train classifier (LogReg/XGBoost/etc.)
-│   │   └── evaluate_model.py    # Metrics, confusion matrix, etc.
-│   └── config.py                # Configs like number of matches for form, etc.
-│
-├── main.py                      # Entry point: runs the full pipeline
-├── requirements.txt
-├── README.md
-└── .gitignore
+premier-league-predictor/  
+├── data/  
+│   ├── raw/                     # Original CSVs (as downloaded)  
+│   ├── processed/               # Cleaned and feature-engineered datasets  
+│  
+├── notebooks/                   # Exploratory work and visualization  
+│  
+├── src/                         # Library of modules  
+│   ├── data/  
+│   │   ├── load_data.py         # Load & clean raw CSVs into DataFrames  
+│   │   ├── build_features.py    # Compute features related to form  
+│   │   └── utils.py             # Shared helper functions  
+│   ├── models/  
+│   │   ├── train_model.py       # Train classifier (LogReg/XGBoost/etc.)  
+│   │   └── evaluate_model.py    # Metrics, confusion matrix, etc.  
+│   └── config.py                # Configs like number of matches for form, etc.  
+│  
+├── main.py                      # Entry point: runs the full pipeline  
+├── requirements.txt  
+├── README.md  
+└── .gitignore  
