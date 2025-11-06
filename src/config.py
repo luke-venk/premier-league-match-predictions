@@ -1,0 +1,16 @@
+"""
+Configuration parameters for our model.
+"""
+
+# The number of previous matches to be included to represent a team's current form.
+N_MATCHES = 5
+
+# The year beginning the Premier League season we would like to consider.
+# e.g., 24 would indicate the Premier League 24/25 season.
+SEASON = 24
+
+# File path for our raw dataset.
+RAW_DATA_PATH = f"data/raw/data_{SEASON}_{SEASON + 1}.csv"
+
+# File path for our processed dataset.
+PROCESSED_DATA_PATH = f"data/processed/data_{SEASON}_{SEASON + 1}.csv"
