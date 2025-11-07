@@ -14,3 +14,6 @@ RAW_DATA_PATH = f"data/raw/data_{SEASON}_{SEASON + 1}.csv"
 
 # File path for our processed dataset.
 PROCESSED_DATA_PATH = f"data/processed/data_{SEASON}_{SEASON + 1}.csv"
+
+# The acronym of the betting company whose odds we want to use: bet365.
+SPORTSBOOK = "B365"
