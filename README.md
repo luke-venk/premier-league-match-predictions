@@ -29,22 +29,23 @@ Given any match, we will engineer features over the last 5 games a team has play
 ## Project Structure
 premier-league-predictor/  
 ├── data/  
-│   ├── raw/                     # Original CSVs (as downloaded)  
-│   ├── processed/               # Cleaned and feature-engineered datasets  
+│   ├── raw/                       # Original CSVs (as downloaded)  
+│   ├── processed/                 # Cleaned and feature-engineered datasets  
+│   ├── test/                      # CSVs used for simple unit tests
 │  
-├── notebooks/                   # Exploratory work and visualization  
+├── notebooks/                     # Exploratory work and visualization  
 │  
-├── src/                         # Library of modules  
+├── src/                           # Library of modules  
 │   ├── data/  
-│   │   ├── load_data.py         # Load & clean raw CSVs into DataFrames  
-│   │   ├── build_features.py    # Compute features related to form  
-│   │   └── utils.py             # Shared helper functions  
+│   │   ├── load_data.py           # Load & clean raw CSVs into DataFrames  
+│   │   ├── build_features.py      # Compute features related to form  
+│   │   └── test_load_and_build.py # Unit tests for feature engineering
 │   ├── models/  
-│   │   ├── train_model.py       # Train classifier (LogReg/XGBoost/etc.)  
-│   │   └── evaluate_model.py    # Metrics, confusion matrix, etc.  
-│   └── config.py                # Configs like number of matches for form, etc.  
+│   │   ├── train_model.py         # Train classifier (LogReg/XGBoost/etc.)  
+│   │   └── evaluate_model.py      # Metrics, confusion matrix, etc.  
+│   └── config.py                  # Configs like number of matches for form, etc.  
 │  
-├── main.py                      # Entry point: runs the full pipeline  
+├── main.py                        # Entry point: runs the full pipeline  
 ├── requirements.txt  
 ├── README.md  
 └── .gitignore  
