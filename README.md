@@ -48,3 +48,9 @@ premier-league-predictor/
 ├── requirements.txt  
 ├── README.md  
 └── .gitignore  
+
+## Testing
+A series of unit tests has been written to confirm our data loading and feature building functions as intended. To run them, go to the project root directory, and run the following:  
+`pytest`  
+
+The CSV files used for unit tests are found in data/test/. The names of the files should be indicative of what case is being checked for. The substring `n#` indicates what the value of `n_matches` is for detecting form, which immediately impacts the calculations of form statistics.
