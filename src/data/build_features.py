@@ -109,6 +109,7 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
     df = df.drop(columns=["team_home", "team_away"])
     
     # Since we're using rolling averages, the first n_matches games will have NaN values, so drop them.
-    df = df.dropna(subset=["form_goals_scored_home", "form_goals_scored_away"]).reset_index(drop=True)
+    # Only drop if both teams has missing data, since dropping rows hurts debugging.
+    df = df.dropna(subset=["form_goals_scored_home", "form_goals_scored_away"], how="all").reset_index(drop=True)
         
     return df
