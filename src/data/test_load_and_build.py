@@ -42,3 +42,21 @@ def test_home_away_stats():
     assert last_row["manu_form_goals_conceded"] == 11, f"Expected 3 wins, but got {last_row['manu_form_goals_conceded']}"
     assert last_row["manu_form_shots_on_target"] == 18, f"Expected 3 wins, but got {last_row['manu_form_shots_on_target']}"
     assert last_row["manu_form_fouls_committed"] == 19, f"Expected 3 wins, but got {last_row['manu_form_fouls_committed']}"
+
+def test_streak_length():
+    """    
+    Verify streak length of various teams, both home and away. We'll set n_matches = 5 and expect various statistics.
+    """
+    df = load_matches(csv_path=f'{TEST_DATA_DIR}/streak_n2.csv', sportsbook='B365')
+    df = build_rolling_features(df=df, n_matches=2)
+
+    print(df)
+    
+    got_H = df["form_win_streak_home"].fillna(0).astype(int).tolist()
+    got_A = df["form_win_streak_away"].fillna(0).astype(int).tolist()
+
+    exp_H = [0, 1, 0, 0, 0]
+    exp_A = [0, 0, 2, 1, 0]
+
+    assert got_H == exp_H, f"Expected {exp_H} for home, got {got_H}"
+    assert got_A == exp_A, f"Expected {exp_A} for away, got {got_A}"

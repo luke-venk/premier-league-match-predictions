@@ -12,6 +12,7 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
         - Goals conceded (last 5 games)
         - Shots on target (last 5 games)
         - Fouls committed (last 5 games)
+        - Win streak length
         - Bookmaker odds (for this match)
     
     Args:
@@ -33,6 +34,7 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
         mask_home = team_df["home_team"] == team_name
         
         # Wins (0 or 1)
+        # Alternatively add 3 for a win 1 for a draw and 0 for a loss and change to "points" *(later)*
         team_df["wins"] = (
             # This team was home and the home team won, OR
             (mask_home & (team_df["result"] == "H")) |
@@ -51,6 +53,9 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
         
         # Fouls committed
         team_df["fouls_committed"] = team_df["home_fouls"].where(mask_home, team_df["away_fouls"])
+
+        # Win streak
+        team_df["form_win_streak"] = consecutive_win_streak_before(team_df["wins"])
         
         # For each of the metrics we just computed, calculate the total metrics over the
         # previous n_matches games.
@@ -71,7 +76,8 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
                 "form_goals_scored",
                 "form_goals_conceded",
                 "form_shots_on_target",
-                "form_fouls_committed"
+                "form_fouls_committed",
+                "form_win_streak"
             ]
         ]
     
@@ -113,3 +119,14 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
     df = df.dropna(subset=["form_goals_scored_home", "form_goals_scored_away"], how="all").reset_index(drop=True)
         
     return df
+
+# Compute win streak
+def consecutive_win_streak_before(wins: pd.Series) -> pd.Series:
+    """
+    Returns the number of consecutive wins before each game.
+    Example: wins = [1,1,0,1] -> streak = [0,1,0,0]
+    """
+    prev = wins.shift(1).fillna(0).astype(int)   # only look at prior results (leak-free)
+    # Vectorized run-length cumsum over blocks separated by zeros
+    groups = (prev == 0).cumsum()
+    return prev.groupby(groups).cumsum()
