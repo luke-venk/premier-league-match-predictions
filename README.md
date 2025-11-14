@@ -1,4 +1,9 @@
 # Developing a Model to Predict Premier League Match Outcomes
+## Project Overview
+In this project, we seek to apply various machine learning models to predict the outcomes of English Premier League (EPL) football matches, classifying each game as a home win (H), a draw (D), or an away win (A). Our model uses publicly available match statistics and bookmaker odds from various sources (see "Data" section) to engineer features related to recent team performances (form), as well as betting market expectations to estimate the most likely result of upcoming features. Our pipeline combines data engineering, feature extraction, and supervised learning.
+
+While predicting football results is inherently uncertain, this project demonstrates how data-driven models can quantify competitive form using real-world sports data. Beyond its entertainment value, our framework illustrates practical machine learning workflows - from raw data ingestion and preprocessing, to feature engineering, to training and evaluation - in a reproducible, usable manner.
+
 ## Set up virtual environment
 To deal with dependencies, create a virtual environment (ignored from repository):  
 `python3 -m venv venv`  
