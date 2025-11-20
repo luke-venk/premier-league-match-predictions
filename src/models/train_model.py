@@ -10,6 +10,7 @@ from src.models import naivebayes
 from src.models import mlpffnn
 from src.models import SVM
 from src.models import lightGBM
+from src.models import voting
 
 def train(model_type: int, X_train: pd.DataFrame, y_train: pd.Series):
     """
@@ -42,6 +43,9 @@ def train(model_type: int, X_train: pd.DataFrame, y_train: pd.Series):
 
     elif model_type == Models.LIGHTGBM:
         model = lightGBM.train_model(X_train, y_train) #7
+    
+    elif model_type == Models.VOTING:
+        model = voting.train_model(X_train, y_train) #8
 
     else:
         raise ValueError(f'Unknown model type: {model_type}')

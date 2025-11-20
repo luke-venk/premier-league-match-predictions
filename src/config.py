@@ -15,16 +15,18 @@ class Models(Enum):
     MLPFFNN            = 5   
     NAIVE_BAYES        = 6
     LIGHTGBM           = 7
+    VOTING             = 8
 
 
 # The specific model we plan to train and evaluate.
-MODEL = Models.LOGISTIC_REGRESSION
+#MODEL = Models.LOGISTIC_REGRESSION
 #MODEL = Models.XGBOOST
 #MODEL = Models.RANDOM_FOREST
 #MODEL = Models.SVM
 #MODEL = Models.MLPFFNN
 #MODEL = Models.NAIVE_BAYES
 #MODEL = Models.LIGHTGBM
+MODEL = Models.VOTING
 
 # The year beginning the Premier League season we would like to consider.
 # e.g., 24 would indicate the Premier League 24/25 season.
