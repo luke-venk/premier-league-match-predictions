@@ -4,10 +4,35 @@ Read and clean the raw CSVs from our data source, and load into a Pandas DataFra
 import re
 import pandas as pd
 
-def load_matches(csv_path: str, sportsbook: str) -> pd.DataFrame:
+def get_processed_path(end_year: int, num_seasons: int) -> str:
     """
-    Load our data from the CSVs to a Pandas DataFrame for our model to use. The point
-    of this is to only load the columns from the dataset that we want:
+    Given the relevant configuration parameters, determine what the name of the
+    output CSV in data/processed would be. Used for determining whether or not
+    the data has already been computed, in order to prevent repeating unnecessary
+    data engineering.
+    
+    Args:
+        end_year: The second year of the most recent season we want to include
+        in our dataset.
+        num_seasons: The total number of seasons we would like to aggregate.
+        
+    Returns:
+        The path to the processed data.
+    """
+    # Example: if the ending year was 25, indicating the 24/25 season, if we used 10
+    # seasons, the beginning season would be the 15/16 season. Thus, the processed
+    # name would be `processed_15_25_n10` to indicate the starting and ending seasons,
+    # as well as the number of years of data used.
+    start_year = end_year - num_seasons
+    return f'data/processed/processed_{start_year}_{end_year}_n{num_seasons}.csv'
+
+def load_season(csv_path: str, sportsbook: str) -> pd.DataFrame:
+    """
+    For a single season, load the relevant features into a Pandas DataFrame,
+    which will be aggregated with DataFrames from all relevant seasons, and
+    then fed into our model.
+    
+    The point of this is to only load the columns from the dataset that we want:
         - Home Team
         - Away Team
         - Full Time Result (FTR)
@@ -21,10 +46,6 @@ def load_matches(csv_path: str, sportsbook: str) -> pd.DataFrame:
     All the features that we want to engineer (see build_features.py) will be engineered
     in that module.
     
-    Could possibly be extended to curl the dataset from online if the raw data
-    for the configured season has not already been loaded:
-        ex: curl -o data_24_25.csv https://football-data.co.uk/mmz4281/2425/E0.csv    
-    
     Args:
         csv_path: The path to the CSV.
         sportsbook: The acronym of the betting company whose odds we want to use.
@@ -37,7 +58,6 @@ def load_matches(csv_path: str, sportsbook: str) -> pd.DataFrame:
     # See list of abbreviations for the dataset at the following link:
     # https://football-data.co.uk/notes.txt
 
-    
     if str(sportsbook).lower() == "aggregate":
         odds_home_cols = [c for c in df.columns if re.fullmatch(r"[A-Z0-9]{2,4}H", c)]
         odds_draw_cols = [c for c in df.columns if re.fullmatch(r"[A-Z0-9]{2,4}D", c)]
@@ -56,7 +76,7 @@ def load_matches(csv_path: str, sportsbook: str) -> pd.DataFrame:
 
         # Now rename the *non-odds* columns as usual, and keep the 3 aggregated odds
         rename_map_base = {
-            # independent vars
+            # Independent variables
             "Date":     "date",
             "HomeTeam": "home_team",
             "AwayTeam": "away_team",
@@ -66,7 +86,8 @@ def load_matches(csv_path: str, sportsbook: str) -> pd.DataFrame:
             "AST":      "away_shots_on_target",
             "HF":       "home_fouls",
             "AF":       "away_fouls",
-            # dependent var
+            
+            # Dependent variable
             "FTR": "result",
         }
 
@@ -106,3 +127,47 @@ def load_matches(csv_path: str, sportsbook: str) -> pd.DataFrame:
     df = df[df['result'].isin(['H', 'D', 'A'])]
     
     return df
+
+
+def load_all_seasons(end_year: int, num_seasons: int, sportsbook: str) -> pd.DataFrame:
+    """
+    Load the data from the proper number of raw CSVs into a processed CSV
+    that stores the data aggregated from all the relevant seasons.
+    
+    Args:
+        end_year: The second year of the most recent season we want to include
+        in our dataset.
+        num_seasons: The total number of seasons we would like to aggregate.
+        
+    Returns:
+        A DataFrame with our aggregated data (also saved to data/processed).
+    """
+    # Store list of all DataFrames corresponding to each relevant season.
+    all_dfs = []
+    
+    # Load all CSVs corresponding to relevant seasons. This will end at `end_year`
+    # and begin at the year starting the season `num_seasons` seasons from `end_year`.
+    
+    # Example: if the ending year was 25, indicating the 24/25 season, if we used 10
+    # seasons, the beginning season would be the 15/16 season.
+    
+    # e.g., from 15 to 24
+    for y1 in range(end_year - num_seasons, end_year):
+        y2 = y1 + 1
+        raw_csv_path = f'data/raw/raw_{y1}_{y2}.csv'
+        df = load_season(raw_csv_path, sportsbook)
+        df['season'] = y1
+        
+        all_dfs.append(df)
+    
+    if not all_dfs:
+        raise ValueError('Failed to load the raw data.')
+    
+    df_all = pd.concat(all_dfs, ignore_index=True)
+    
+    # Sort by date across all seasons.
+    df_all = df_all.sort_values(["season", "date"]).reset_index(drop=True)
+    
+    return df_all
+        
+        

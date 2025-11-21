@@ -22,13 +22,15 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
         A DataFrame with our pre-processed features.
     """
     # Ensure data is chronologically sorted (although, it already should be).
-    df = df.sort_values("date").reset_index(drop=True)
+    # Adding 'season' as a grouping key prevents rolling windows from crossing
+    # season boundaries.
+    df = df.sort_values(["season", "date"]).reset_index(drop=True)
     
     def compute_team_form(team_name: str) -> pd.DataFrame:
         """Compute rolling form features for a single team."""
         # Only consider entries that include the team as either the home or away team.
         team_df = df[(df["home_team"] == team_name) | (df["away_team"] == team_name)].copy()
-        team_df = team_df.sort_values("date").reset_index(drop=True)
+        team_df = team_df.sort_values(["season", "date"]).reset_index(drop=True)
         
         # Boolean mask to know whether to use "home" or "away" columns in dataset.
         mask_home = team_df["home_team"] == team_name
@@ -70,6 +72,7 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
         # Return only the features useful for the model.
         return team_df[
             [
+                "season",
                 "date",
                 "team",
                 "form_wins",
@@ -92,8 +95,8 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
     df = df.merge(
         all_teams,
         # Merge if df["date"] == all_teams["date"] and df["home_team"] == all_teams["team"]
-        left_on=["date", "home_team"],
-        right_on=["date", "team"],
+        left_on=["season", "date", "home_team"],
+        right_on=["season", "date", "team"],
         # Keep rows from left (df), and bring in matching rows from right (all_teams)
         how="left",
         # Add "_home" to overlapping column names to distinguish them before the away merge
@@ -103,8 +106,8 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
     # Do the same for the away team.
     df = df.merge(
         all_teams,
-        left_on=["date", "away_team"],
-        right_on=["date", "team"],
+        left_on=["season", "date", "away_team"],
+        right_on=["season", "date", "team"],
         how="left",
         # Now, since the left DataFrame already contains "_home" columns,
         # we use suffixes=("_home", "_away") to ensure this merge adds distinct "_away" columns
@@ -116,7 +119,10 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
     
     # Since we're using rolling averages, the first n_matches games will have NaN values, so drop them.
     # Only drop if both teams has missing data, since dropping rows hurts debugging.
-    df = df.dropna(subset=["form_goals_scored_home", "form_goals_scored_away"], how="all").reset_index(drop=True)
+    # df = df.dropna(subset=["form_goals_scored_home", "form_goals_scored_away"], how="all").reset_index(drop=True)
+    
+    rolling_cols = [c for c in df.columns if c.startswith("form_")]
+    df = df.dropna(subset=rolling_cols).reset_index(drop=True)
         
     return df
 
