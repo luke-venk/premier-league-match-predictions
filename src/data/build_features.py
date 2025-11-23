@@ -8,6 +8,7 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
     """
     Compute the rolling stats of the following features both home and away teams:
         - Wins (last 5 games)
+        - Points (last 5 games)
         - Goals scored (last 5 games)
         - Goals conceded (last 5 games)
         - Shots on target (last 5 games)
@@ -36,13 +37,15 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
         mask_home = team_df["home_team"] == team_name
         
         # Wins (0 or 1)
-        # Alternatively add 3 for a win 1 for a draw and 0 for a loss and change to "points" *(later)*
         team_df["wins"] = (
             # This team was home and the home team won, OR
             (mask_home & (team_df["result"] == "H")) |
             # This team was away and the away team won.
             (~mask_home & (team_df["result"] == "A"))
         ).astype(int)
+
+        # Points add 3 for a win 1 for a draw and 0 for a loss 
+        team_df["points"] = (3 * team_df["wins"] + (team_df["result"] == "D").astype(int)).astype(int)
         
         # Goals scored
         team_df["goals_scored"] = team_df["home_goals"].where(mask_home, team_df["away_goals"])
@@ -61,7 +64,7 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
         
         # For each of the metrics we just computed, calculate the total metrics over the
         # previous n_matches games.
-        for col in ["wins", "goals_scored", "goals_conceded", "shots_on_target", "fouls_committed"]:
+        for col in ["wins","points", "goals_scored", "goals_conceded", "shots_on_target", "fouls_committed"]:
             # shift() prevents data leakage by shifting the current row down and only including prior rows.
             # rolling(n_matches) creates rolling window of n_matches entries
             team_df[f"form_{col}"] = team_df[col].shift().rolling(n_matches).sum()
@@ -76,6 +79,7 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
                 "date",
                 "team",
                 "form_wins",
+                "form_points",
                 "form_goals_scored",
                 "form_goals_conceded",
                 "form_shots_on_target",
