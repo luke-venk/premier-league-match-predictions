@@ -18,7 +18,7 @@ class Models(Enum):
     VOTING              = 8
 
 # The specific model we plan to train and evaluate. Options:
-MODEL = Models.LOGISTIC_REGRESSION
+MODEL = Models.RANDOM_FOREST
 
 # The year ending the Premier League season we would like to consider.
 # e.g., 25 would indicate the Premier League 24/25 season.

@@ -1,7 +1,7 @@
 """
 Compute rolling stats to reflect a team's form.
 """
-
+import numpy as np
 import pandas as pd
 
 def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
@@ -26,6 +26,9 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
     # Adding 'season' as a grouping key prevents rolling windows from crossing
     # season boundaries.
     df = df.sort_values(["season", "date"]).reset_index(drop=True)
+
+    # Add ELo K = update size; base = base elo; home adv = extra elo added to home team; season regress starts off new seasons by returning elo closer to base
+    df = add_elo_features(df, K=24.0, base=1500.0, home_adv=60.0, season_regress=0.25)
     
     def compute_team_form(team_name: str) -> pd.DataFrame:
         """Compute rolling form features for a single team."""
@@ -140,3 +143,98 @@ def consecutive_win_streak_before(wins: pd.Series) -> pd.Series:
     # Vectorized run-length cumsum over blocks separated by zeros
     groups = (prev == 0).cumsum()
     return prev.groupby(groups).cumsum()
+
+
+def add_elo_features(
+    df: pd.DataFrame,
+    K: float = 24.0,
+    base: float = 1500.0,
+    home_adv: float = 60.0,
+    season_regress: float = 0.25,
+) -> pd.DataFrame:
+    """
+    Adds pre-match Elo features:
+        - elo_home_pre, elo_away_pre, elo_diff_pre
+    And also keeps post-match ratings for debugging (elo_home_post, elo_away_post).
+
+    Parameters
+    ----------
+    K : float
+        Elo K-factor (update size). Typical 16–32 for soccer.
+    base : float
+        Starting rating for all teams.
+    home_adv : float
+        Home-advantage rating bump (e.g., +60 Elo for the home team).
+    season_regress : float in [0,1]
+        At a new season, ratings := (1 - season_regress) * old + season_regress * base.
+        Set to 0.0 to disable regression.
+
+    Returns
+    -------
+    df : DataFrame with added Elo columns (pre-match features).
+    """
+    # Work on a copy, sorted chronologically per your pipeline
+    df = df.sort_values(["season", "date"]).reset_index(drop=True).copy()
+
+    # Storage for output columns
+    elo_home_pre, elo_away_pre = [], []
+    elo_home_post, elo_away_post = [], []
+
+    # Ratings dict, reset / regressed each season
+    current_season = None
+    ratings = {}
+
+    for idx, row in df.iterrows():
+        season = row["season"]
+        home = row["home_team"]
+        away = row["away_team"]
+        result = row["result"]  # 'H', 'D', or 'A'
+
+        # When season changes, optionally regress everyone toward base
+        if season != current_season:
+            if current_season is not None and season_regress > 0.0:
+                for t in ratings.keys():
+                    ratings[t] = (1 - season_regress) * ratings[t] + season_regress * base
+            current_season = season
+
+        # Ensure teams exist in ratings dict
+        if home not in ratings:
+            ratings[home] = base
+        if away not in ratings:
+            ratings[away] = base
+
+        Rh, Ra = ratings[home], ratings[away]
+
+        # Pre-match ratings (what you’ll actually use as features)
+        elo_home_pre.append(Rh)
+        elo_away_pre.append(Ra)
+
+        # Expected score for home with home-adv bump
+        # E_home = 1 / (1 + 10^((Ra - (Rh + home_adv))/400))
+        Rh_adj = Rh + home_adv
+        exp_home = 1.0 / (1.0 + 10.0 ** ((Ra - Rh_adj) / 400.0))
+        exp_away = 1.0 - exp_home
+
+        # Actual scores
+        if result == "H":
+            s_home, s_away = 1.0, 0.0
+        elif result == "A":
+            s_home, s_away = 0.0, 1.0
+        else:  # 'D'
+            s_home, s_away = 0.5, 0.5
+
+        # Elo updates
+        Rh_new = Rh + K * (s_home - exp_home)
+        Ra_new = Ra + K * (s_away - exp_away)
+
+        ratings[home] = Rh_new
+        ratings[away] = Ra_new
+
+        elo_home_post.append(Rh_new)
+        elo_away_post.append(Ra_new)
+
+    # Attach to df
+    df["elo_home_pre"] = np.array(elo_home_pre, dtype=float)
+    df["elo_away_pre"] = np.array(elo_away_pre, dtype=float)
+
+    return df

@@ -31,7 +31,7 @@ def chrono_split(df: pd.DataFrame, train_ratio: float = 0.7) -> tuple:
     
     # Use only previous data and odds as features in the model.
     feature_cols = [c for c in df_proc.columns if c.startswith('form_')]
-    feature_cols += ['odds_home_win', 'odds_draw', 'odds_away_win']
+    feature_cols += ['odds_home_win', 'odds_draw', 'odds_away_win', 'elo_home_pre', 'elo_away_pre']
 
     # Make feature matrix X and target y.
     X = df_proc[feature_cols].copy()
