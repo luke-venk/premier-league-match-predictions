@@ -27,7 +27,7 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
     # season boundaries.
     df = df.sort_values(["season", "date"]).reset_index(drop=True)
 
-    # Add ELo K = update size; base = base elo; home adv = extra elo added to home team; season regress starts off new seasons by returning elo closer to base
+    # Add ELo: Season regress starts off new seasons by returning elo closer to base.
     df = add_elo_features(df, K=24.0, base=1500.0, home_adv=60.0, season_regress=0.25)
     
     def compute_team_form(team_name: str) -> pd.DataFrame:
@@ -67,10 +67,10 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
         
         # For each of the metrics we just computed, calculate the total metrics over the
         # previous n_matches games.
-        for col in ["wins","points", "goals_scored", "goals_conceded", "shots_on_target", "fouls_committed"]:
+        for col in ["wins", "points", "goals_scored", "goals_conceded", "shots_on_target", "fouls_committed"]:
             # shift() prevents data leakage by shifting the current row down and only including prior rows.
             # rolling(n_matches) creates rolling window of n_matches entries
-            team_df[f"form_{col}"] = team_df[col].shift().rolling(n_matches).sum()
+            team_df[f"form_{col}"] = team_df[col].shift().rolling(n_matches, min_periods=1).sum()
             
         # Add the team name as an identifier.
         team_df["team"] = team_name
@@ -236,5 +236,6 @@ def add_elo_features(
     # Attach to df
     df["elo_home_pre"] = np.array(elo_home_pre, dtype=float)
     df["elo_away_pre"] = np.array(elo_away_pre, dtype=float)
+    df["elo_diff_pre"] = df["elo_home_pre"] - df["elo_away_pre"]
 
     return df
