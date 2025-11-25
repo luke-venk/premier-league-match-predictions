@@ -33,8 +33,7 @@ def main():
     model = train(MODEL, X_train, y_train)
 
     # Evaluate the model based on the holdout set.
-    evaluate(model, X_test, y_test)
-    
+    evaluate(model, X_test, y_test, show_confusion_matrix=True)
 
 if __name__ == "__main__":
     main()
