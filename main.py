@@ -10,6 +10,7 @@ from src.data.build_features import build_rolling_features
 from src.data.split import chrono_split
 from src.models.train_model import train
 from src.models.evaluate_model import evaluate
+from src.data.scrape_values import main as scrape_values
 
 def main():
     # Debug flag to always redo dataset until proven cleaning works.
@@ -25,6 +26,7 @@ def main():
         df_raw = load_all_seasons(end_year=END_YEAR, num_seasons=NUM_SEASONS, sportsbook=SPORTSBOOK)
         df = build_rolling_features(df=df_raw, n_matches=N_MATCHES)
         df.to_csv(PROCESSED_DATA_PATH, index=False)
+
         
     # Use a 70-30 chronological train-test split.
     X_train, y_train, X_test, y_test = chrono_split(df, train_ratio=0.7)
