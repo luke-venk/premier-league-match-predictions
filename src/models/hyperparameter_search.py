@@ -46,7 +46,8 @@ def tune_model(name, model, params, X_train, y_train, cv=5):
     
     elapsed = time.time() - start
     print(f'Finished tuning {name} in {elapsed:.2f} seconds.')
-    print(f'Best score = {grid_search.best_score_}')
+    print(f'Best score = {grid_search.best_score_}.')
+    print(f'Best params = {grid_search.best_params_}\n.')
     
     return {
         'name': name,
