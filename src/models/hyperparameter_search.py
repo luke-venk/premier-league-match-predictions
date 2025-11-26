@@ -1,6 +1,7 @@
 """
 Reusable utilities for running hyperparameter searches in notebook files.
 """
+import time
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.linear_model import LogisticRegression
@@ -30,6 +31,7 @@ def tune_model(name, model, params, X_train, y_train, cv=5):
     """
     print(f'Tuning {name}...')
     
+    start = time.time()
     grid_search = GridSearchCV(
         estimator=model,
         param_grid=params,
@@ -41,6 +43,10 @@ def tune_model(name, model, params, X_train, y_train, cv=5):
     )
     
     grid_search.fit(X_train, y_train)
+    
+    elapsed = time.time() - start
+    print(f'Finished tuning {name} in {elapsed:.2f} seconds.')
+    print(f'Best score = {grid_search.best_score_}')
     
     return {
         'name': name,
