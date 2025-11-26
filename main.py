@@ -13,6 +13,7 @@ from src.models.evaluate_model import evaluate
 from src.data.scrape_values import main as scrape_values
 
 def main():
+    print('>>> Processing data...')
     # Debug flag to always redo dataset until proven cleaning works.
     # TODO: remove
     RESET = True
@@ -32,6 +33,7 @@ def main():
     X_train, y_train, X_test, y_test = chrono_split(df, train_ratio=0.7)
     
     # Train the model based on what type of model the user configured.
+    print('>>> Training model...')
     model = train(MODEL, X_train, y_train)
 
     # Evaluate the model based on the holdout set.
