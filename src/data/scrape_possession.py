@@ -1,4 +1,3 @@
-import datetime as dt
 import re
 import time
 from pathlib import Path
@@ -8,9 +7,8 @@ import requests
 from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter, Retry
 
-PROCESSED_CSV = Path("data/processed/processed_15_25_n10.csv")
+PROCESSED_BASE = Path("data/processed/processed_15_25_n10.csv")
 RAW_OUT = Path("data/raw/fc_possession_raw.csv")
-PROCESSED_OUT = Path("data/processed/fc_possession_2015_2025.csv")
 
 SEASON_URLS = {
     2015: "https://www.footballcritic.com/premier-league/season-2015-2016/matches/2/8978",
@@ -27,6 +25,28 @@ SEASON_URLS = {
 }
 
 REQUEST_DELAY = 1.0
+
+TEAM_NAME_MAP = {
+    "Tottenham Hotspur": "Tottenham",
+    "West Bromwich Albion": "West Brom",
+    "West Ham Utd": "West Ham",
+    "Hull City": "Hull",
+    "Leeds Utd": "Leeds",
+    "Leeds United": "Leeds",
+    "Ipswich Town": "Ipswich",
+    "Luton Town": "Luton",
+    "Nottingham Forest": "Nott'm Forest",
+    "Notts Forest": "Nott'm Forest",
+    "Sheffield Utd": "Sheffield United",
+    "AFC Bournemouth": "Bournemouth",
+    "Man Utd": "Man United",
+    "Manchester United": "Man United",
+    "Man City": "Man City",
+    "Manchester City": "Man City",
+    "Wolverhampton Wanderers": "Wolves",
+    "Wolverhampton": "Wolves",
+    "Leicester City": "Leicester",
+}
 
 
 def _mk_session():
@@ -57,29 +77,6 @@ def _get_html(sess, url):
     r.raise_for_status()
     time.sleep(REQUEST_DELAY)
     return BeautifulSoup(r.text, "lxml")
-
-
-TEAM_NAME_MAP = {
-    "Tottenham Hotspur": "Tottenham",
-    "West Bromwich Albion": "West Brom",
-    "West Ham Utd": "West Ham",
-    "Hull City": "Hull",
-    "Leeds Utd": "Leeds",
-    "Leeds United": "Leeds",
-    "Ipswich Town": "Ipswich",
-    "Luton Town": "Luton",
-    "Nottingham Forest": "Nott'm Forest",
-    "Notts Forest": "Nott'm Forest",
-    "Sheffield Utd": "Sheffield United",
-    "AFC Bournemouth": "Bournemouth",
-    "Man Utd": "Man United",
-    "Manchester United": "Man United",
-    "Man City": "Man City",
-    "Manchester City": "Man City",
-    "Wolverhampton Wanderers": "Wolves",
-    "Wolverhampton": "Wolves",
-    "Leicester City": "Leicester",
-}
 
 
 def _norm_team(name):
@@ -206,29 +203,53 @@ def _fetch_possession(sess, url):
     return _extract_possession(soup)
 
 
-def analyze_possession_coverage(df):
+def analyze_possession_coverage(processed_file, raw_df):
+    try:
+        df = pd.read_csv(processed_file)
+    except Exception as e:
+        print("[coverage] could not read", processed_file, ":", e)
+        return
+
     print("\n" + "=" * 70)
     print("POSSESSION DATA COVERAGE ANALYSIS")
     print("=" * 70)
+    print("Processed file:", processed_file)
 
-    total = len(df)
-    print("Total matches in enriched dataset:", total)
+    # Merge in raw possession columns
+    tmp = df.merge(
+        raw_df[
+            [
+                "date",
+                "home_team",
+                "away_team",
+                "home_possession_pct",
+                "away_possession_pct",
+                "possession_diff",
+            ]
+        ],
+        on=["date", "home_team", "away_team"],
+        how="left",
+        validate="m:1",
+    )
 
-    has_home = df["home_possession_pct"].notna()
-    has_away = df["away_possession_pct"].notna()
+    total = len(tmp)
+    print("Total matches in this file:", total)
+
+    has_home = tmp["home_possession_pct"].notna()
+    has_away = tmp["away_possession_pct"].notna()
     has_both = has_home & has_away
     has_any = has_home | has_away
 
     n_any = int(has_any.sum())
     n_both = int(has_both.sum())
 
-    print("\nFill rate:")
+    print("\nFill rate (possession in raw scrape):")
     print(f"  any possession value: {n_any} / {total} ({100.0 * n_any / total if total else 0.0:.2f}%)")
     print(f"  both home & away: {n_both} / {total} ({100.0 * n_both / total if total else 0.0:.2f}%)")
 
     if n_both > 0:
-        tmp = df.loc[has_both, ["home_possession_pct", "away_possession_pct"]].astype(float)
-        sums = tmp["home_possession_pct"] + tmp["away_possession_pct"]
+        tmp2 = tmp.loc[has_both, ["home_possession_pct", "away_possession_pct"]].astype(float)
+        sums = tmp2["home_possession_pct"] + tmp2["away_possession_pct"]
         tol = 1.0
         bad = sums[(sums - 100.0).abs() > tol]
         n_bad = int(bad.shape[0])
@@ -236,20 +257,11 @@ def analyze_possession_coverage(df):
         print(f"  rows with both sides but sum != 100±{tol}: {n_bad} ({100.0 * n_bad / n_both if n_both else 0.0:.2f}%)")
 
         if n_bad > 0:
-            print("\n  Example rows with non-100 sums (up to 5):")
-            ex = df.loc[has_both].iloc[bad.index].head(5)
+            print("\n  Example rows with non-100 sums:")
+            ex = tmp.loc[has_both].iloc[bad.index].head(5)
             for _, r in ex.iterrows():
                 s_val = float(r["home_possession_pct"] + r["away_possession_pct"])
                 print(f"   {r['date']} {r['home_team']} vs {r['away_team']}: {r['home_possession_pct']} + {r['away_possession_pct']} = {s_val:.2f}")
-
-    if "season" in df.columns:
-        print("\nBy-season coverage (rows with both values):")
-        g = df.assign(_has_both=has_both).groupby("season")["_has_both"].agg(["sum", "count"])
-        for season, row in g.iterrows():
-            s = int(row["sum"])
-            c = int(row["count"])
-            pct = 100.0 * s / c if c else 0.0
-            print(f"  Season {season}: {s}/{c} ({pct:.2f}%)")
 
     print("=" * 70 + "\n")
 
@@ -257,14 +269,14 @@ def analyze_possession_coverage(df):
 def main():
     sess = _mk_session()
 
-    print("Reading processed match CSV...")
-    base_df = pd.read_csv(PROCESSED_CSV)
+    print("Reading base processed match CSV...")
+    base_df = pd.read_csv(PROCESSED_BASE)
     base_df["date"] = pd.to_datetime(base_df["date"]).dt.date.astype(str)
 
     print("Building FootballCritic match index...")
     index_df = _build_full_match_index(sess, SEASON_URLS)
 
-    print("Merging index with processed data...")
+    print("Merging index with base processed data...")
     merged = base_df.merge(
         index_df,
         on=["date", "home_team", "away_team"],
@@ -312,32 +324,49 @@ def main():
     raw_df = pd.DataFrame(records)
 
     RAW_OUT.parent.mkdir(parents=True, exist_ok=True)
-    PROCESSED_OUT.parent.mkdir(parents=True, exist_ok=True)
 
     print("Writing raw possession data to", RAW_OUT)
     raw_df.to_csv(RAW_OUT, index=False)
 
-    print("Joining possession back onto processed matches...")
-    enriched = base_df.merge(
-        raw_df[
-            [
-                "date",
-                "home_team",
-                "away_team",
-                "home_possession_pct",
-                "away_possession_pct",
-                "possession_diff",
-            ]
-        ],
-        on=["date", "home_team", "away_team"],
-        how="left",
-        validate="m:1",
-    )
+    # Now merge possession_diff into ALL processed CSVs in data/processed
+    processed_dir = Path("data/processed")
+    csv_files = sorted(processed_dir.glob("*.csv"))
 
-    print("Writing enriched CSV to", PROCESSED_OUT)
-    enriched.to_csv(PROCESSED_OUT, index=False)
+    for processed_file in csv_files:
+        print("\n" + "=" * 70)
+        print("Processing:", processed_file.name)
+        print("=" * 70)
 
-    analyze_possession_coverage(enriched)
+        try:
+            df = pd.read_csv(processed_file)
+            print("Loaded match data:", len(df), "rows")
+
+            if "date" in df.columns:
+                df["date"] = pd.to_datetime(df["date"]).dt.date.astype(str)
+
+            if "possession_diff" in df.columns:
+                df = df.drop(columns=["possession_diff"])
+
+            df = df.merge(
+                raw_df[["date", "home_team", "away_team", "possession_diff"]],
+                on=["date", "home_team", "away_team"],
+                how="left",
+                validate="m:1",
+            )
+
+            df.to_csv(processed_file, index=False)
+            print("Updated match data saved to", processed_file)
+            print("Added/updated column: possession_diff")
+
+            # Coverage analysis
+            print("\n" + "-" * 70)
+            print("COVERAGE ANALYSIS (using raw possession data)")
+            print("-" * 70)
+            analyze_possession_coverage(str(processed_file), raw_df)
+
+        except Exception as e:
+            print("Error processing", processed_file.name, ":", e)
+            continue
 
 
 if __name__ == "__main__":
