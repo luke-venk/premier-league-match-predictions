@@ -119,8 +119,9 @@ def load_season(csv_path: str, sportsbook: str) -> pd.DataFrame:
         # Rename the columns from the keys to the values.
         df = df.rename(columns=rename_map)
     
-    # Parse date column into datetime.
-    df['date'] = pd.to_datetime(df['date'], dayfirst=True)
+    # Parse date column into datetime. Can't specify DD/MM/YYYY because for some reason
+    # the 16/17 season uses DD/MM/YY.
+    df['date'] = pd.to_datetime(df['date'], format='mixed', dayfirst=True)
     
     # Drop rows without a valid result (e.g., postponed, or not home, draw, or away).
     df = df.dropna(subset=['result'])
