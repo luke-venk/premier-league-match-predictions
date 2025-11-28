@@ -4,6 +4,7 @@ import time
 import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import requests
 from requests.adapters import HTTPAdapter, Retry
@@ -210,8 +211,6 @@ def _postprocess_valuation_df(df_raw, cutoff):
             df_raw["current_value_eur"] - df_raw["difference_eur"],
         )
 
-    med = df_raw["value_eur_at_date"].median(skipna=True)
-
     for c in EXPECTED_VAL_COLS:
         if c not in df_raw.columns:
             df_raw[c] = pd.NA
@@ -280,7 +279,11 @@ def analyze_valuation_coverage(processed_csv ="data/processed/processed_15_25_n1
             df = df[df["date"] >= cutoff]
             print(f"Filtered to {len(df)} matches after {after_date} using 'date'")
 
-        val_cols = ["home_squad_value", "home_squad_size", "away_squad_value", "away_squad_size"]
+        val_cols = [
+            "home_squad_value_log_z",
+            "away_squad_value_log_z",
+            "squad_value_log_advantage_z",
+        ]
         missing_cols = [col for col in val_cols if col not in df.columns]
         if missing_cols:
             print(f"Warning: Missing columns {missing_cols}. Run scraper/merge to add valuation data.")
@@ -314,14 +317,14 @@ def analyze_valuation_coverage(processed_csv ="data/processed/processed_15_25_n1
             print(f"  Coverage: {s['non_null_count']}/{s['total']} matches ({s['coverage_percentage']:.2f}%)")
             print(f"  Missing:  {s['null_count']}/{s['total']} matches ({s['null_percentage']:.2f}%)")
 
-        both_present = df[["home_squad_value", "away_squad_value"]].notna().all(axis=1).sum()
+        both_present = df[["home_squad_value_log_z", "away_squad_value_log_z"]].notna().all(axis=1).sum()
         both_pct = (both_present / total_rows) * 100 if total_rows > 0 else 0
         print("\n" + "-"*70)
         print("\nComplete match coverage (both teams have data):")
         print(f"  {both_present}/{total_rows} matches ({both_pct:.2f}%)")
 
-        if "date" in df.columns and "home_squad_value" in df:
-            notna_mask = df["home_squad_value"].notna()
+        if "date" in df.columns and "home_squad_value_log_z" in df:
+            notna_mask = df["home_squad_value_log_z"].notna()
             if notna_mask.any():
                 first_val = df.loc[notna_mask, "date"].min()
                 last_val = df.loc[notna_mask, "date"].max()
@@ -338,8 +341,8 @@ def analyze_valuation_coverage(processed_csv ="data/processed/processed_15_25_n1
         all_teams = sorted(home_teams | away_teams)
         print(f"\nTotal unique teams in match data: {len(all_teams)}")
 
-        teams_with_home_data = set(df[df.get("home_squad_value").notna()]["home_team"].unique()) if "home_squad_value" in df else set()
-        teams_with_away_data = set(df[df.get("away_squad_value").notna()]["away_team"].unique()) if "away_squad_value" in df else set()
+        teams_with_home_data = set(df[df.get("home_squad_value_log_z").notna()]["home_team"].unique()) if "home_squad_value_log_z" in df else set()
+        teams_with_away_data = set(df[df.get("away_squad_value_log_z").notna()]["away_team"].unique()) if "away_squad_value_log_z" in df else set()
         teams_with_any_data = teams_with_home_data | teams_with_away_data
         print(f"Teams with valuation data: {len(teams_with_any_data)}")
         print(f"Teams without valuation data: {len(all_teams) - len(teams_with_any_data)}")
@@ -356,7 +359,12 @@ def analyze_valuation_coverage(processed_csv ="data/processed/processed_15_25_n1
             for i, team in enumerate(teams_with_data_list, 1):
                 if "home_team" in df.columns and "away_team" in df.columns:
                     match_count = len(df[(df["home_team"] == team) | (df["away_team"] == team)])
-                    covered_count = len(df[((df["home_team"] == team) & df["home_squad_value"].notna()) | ((df["away_team"] == team) & df["away_squad_value"].notna())])
+                    covered_count = len(
+                        df[
+                            ((df["home_team"] == team) & df["home_squad_value_log_z"].notna())
+                            | ((df["away_team"] == team) & df["away_squad_value_log_z"].notna())
+                        ]
+                    )
                 else:
                     match_count = 0
                     covered_count = 0
@@ -474,11 +482,8 @@ def main():
     def merge_team_values(match_df, val_df, team_col, team_col_normalized, date_col_for_merge, prefix):
         merged = match_df.copy()
         value_col = f"{prefix}_squad_value"
-        size_col = f"{prefix}_squad_size"
         if value_col not in merged:
             merged[value_col] = None
-        if size_col not in merged:
-            merged[size_col] = None
 
         for idx, row in merged.iterrows():
             team_normalized = row[team_col_normalized]
@@ -487,7 +492,6 @@ def main():
             if not team_vals.empty:
                 latest = team_vals.iloc[-1]
                 merged.at[idx, value_col] = latest["value_eur_at_date"]
-                merged.at[idx, size_col] = latest["squad_size_at_date"]
         return merged
 
     # Merge valuations into all processed CSV files
@@ -509,12 +513,42 @@ def main():
             print("Merging away team valuations...")
             match_df["away_team_normalized"] = match_df["away_team"].apply(normalize_team_name) if "away_team" in match_df.columns else None
             match_df = merge_team_values(match_df, val_df, "away_team", "away_team_normalized", "_match_date", "away")
+
+            if "home_squad_value" in match_df.columns and "away_squad_value" in match_df.columns:
+                match_df["home_squad_value"] = pd.to_numeric(match_df["home_squad_value"], errors="coerce")
+                match_df["away_squad_value"] = pd.to_numeric(match_df["away_squad_value"], errors="coerce")
+
+                match_df["home_squad_value_log"] = np.log1p(match_df["home_squad_value"])
+                match_df["away_squad_value_log"] = np.log1p(match_df["away_squad_value"])
+
+                match_df["squad_value_advantage"] = match_df["home_squad_value"] - match_df["away_squad_value"]
+                match_df["squad_value_log_advantage"] = match_df["home_squad_value_log"] - match_df["away_squad_value_log"]
+
+                for col in ["home_squad_value_log", "away_squad_value_log", "squad_value_log_advantage"]:
+                    mean = match_df[col].mean(skipna=True)
+                    std = match_df[col].std(skipna=True)
+                    if std and not np.isnan(std):
+                        match_df[col + "_z"] = (match_df[col] - mean) / std
+                    else:
+                        match_df[col + "_z"] = pd.NA
+
+                match_df = match_df.drop(
+                    columns=[
+                        "home_squad_value",
+                        "away_squad_value",
+                        "home_squad_value_log",
+                        "away_squad_value_log",
+                        "squad_value_advantage",
+                        "squad_value_log_advantage",
+                    ],
+                    errors="ignore",
+                )
             
             match_df = match_df.drop(columns=["home_team_normalized", "away_team_normalized", "_match_date"], errors="ignore")
             match_df.to_csv(processed_file, index=False)
             
             print(f"Updated match data saved to {processed_file}")
-            print("Added/updated columns: home_squad_value, home_squad_size, away_squad_value, away_squad_size")
+            print("Added/updated columns: home_squad_value_log_z, away_squad_value_log_z, squad_value_log_advantage_z")
             
             print("\n" + "-"*70)
             print("COVERAGE ANALYSIS")
