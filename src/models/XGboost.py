@@ -1,12 +1,12 @@
 # Gradient-boosted trees (great for tabular). No scaling needed.
 from xgboost import XGBClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
+from src.util.DFImputer import DFImputer
 
 def train_model(X_train,y_train):
 
     pipeline =  Pipeline([
-        ("imputer", SimpleImputer(strategy="median")),
+        ("imputer", DFImputer(strategy="median")),
         ("clf",  XGBClassifier(
             objective="multi:softprob",  # multiclass probabilities
             num_class=3,                 # 3 outcomes: H/A/D

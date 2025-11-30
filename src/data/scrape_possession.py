@@ -334,22 +334,12 @@ def scrape_possession_data(sess, processed_base, season_urls):
     return raw_df
 
 
-# ---------------------------------------------------------------------
-# NEW: helper to load cached possession data
-# ---------------------------------------------------------------------
 def load_cached_possession(path: Path = RAW_OUT) -> pd.DataFrame:
-    """
-    Load cached raw possession data from CSV.
-    Expects columns matching the output of scrape_possession_data().
-    """
     print("Loading cached possession data from", path)
     df = pd.read_csv(path)
     return df
 
 
-# ---------------------------------------------------------------------
-# Core merge function that works with DataFrames
-# ---------------------------------------------------------------------
 def merge_possession_into_dataframe(df: pd.DataFrame, possession_csv_path: Path = RAW_OUT) -> pd.DataFrame:
     # Load possession data
     possession_df = pd.read_csv(possession_csv_path)

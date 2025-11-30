@@ -2,13 +2,13 @@
 # Needs scaling; Adam optimizer built-in. MLPs train better with standard features
 from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
+from src.util.DFImputer import DFImputer
 from sklearn.preprocessing import StandardScaler
 
 def train_model(X_train, y_train):
     
     pipeline = Pipeline([
-        ("imputer", SimpleImputer(strategy="median")),
+        ("imputer", DFImputer(strategy="median")),
         ("scaler", StandardScaler()),
         ("clf", MLPClassifier(
             hidden_layer_sizes=(64, 32),  # two-layer FFN

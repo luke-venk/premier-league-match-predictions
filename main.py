@@ -72,7 +72,7 @@ def plot_accuracy_vs_n():
             y_pred = model.predict(X_test)
             
             accuracies.append(accuracy_score(y_test, y_pred))
-        plt.plot(n_to_test, accuracies, label=model_type.name.lower())
+        plt.plot(n_to_test, accuracies, 'o-', label=model_type.name.lower())
         
     plt.xlabel('Number of Games Used to Compute Form Statistics')
     plt.ylabel('Model Accuracy')
