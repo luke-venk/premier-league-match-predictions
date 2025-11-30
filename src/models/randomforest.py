@@ -1,12 +1,12 @@
 # Bagged trees; very robust baseline. No scaling needed.
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
+from src.util.DFImputer import DFImputer
 
 def train_model(X_train,y_train):
 
     pipeline = Pipeline([
-        ("imputer", SimpleImputer(strategy="median")),
+        ("imputer", DFImputer(strategy="median")),
         ("clf", RandomForestClassifier(
             n_estimators=600,       # more trees -> lower variance
             max_depth=None,         # let trees expand; we control with min_samples_leaf

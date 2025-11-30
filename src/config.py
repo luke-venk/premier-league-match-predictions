@@ -1,24 +1,24 @@
 """
 Configuration parameters for our model.
 """
-from enum import Enum
+from enum import Enum, auto
 
 # The number of previous matches to be included to represent a team's current form.
 N_MATCHES = 5
 
 # A list of all possible models that our project supports.
 class Models(Enum):
-    LOGISTIC_REGRESSION = 1
-    XGBOOST             = 2
-    RANDOM_FOREST       = 3
-    SVM                 = 4  
-    MLPFFNN             = 5   
-    NAIVE_BAYES         = 6
-    # LIGHTGBM            = 7
-    # VOTING              = 8
+    LOGISTIC_REGRESSION = auto()
+    XGBOOST             = auto()
+    RANDOM_FOREST       = auto()
+    SVM                 = auto()
+    MLPFFNN             = auto()
+    NAIVE_BAYES         = auto()
+    LIGHTGBM            = auto()
+    VOTING              = auto()
 
 # The specific model we plan to train and evaluate. Options:
-MODEL = Models.LOGISTIC_REGRESSION
+MODEL = Models.VOTING
 
 # The year ending the Premier League season we would like to consider.
 # e.g., 25 would indicate the Premier League 24/25 season.

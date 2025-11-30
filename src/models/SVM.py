@@ -1,12 +1,12 @@
 from sklearn.svm import SVC
 from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
+from src.util.DFImputer import DFImputer
 from sklearn.preprocessing import StandardScaler
 
 def train_model(X_train, y_train):
 
     pipeline = Pipeline([
-        ("imputer", SimpleImputer(strategy="median")),
+        ("imputer", DFImputer(strategy="median")),
         ("scaler", StandardScaler()),
         ("clf", SVC(
             kernel="rbf",

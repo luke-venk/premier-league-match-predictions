@@ -1,12 +1,12 @@
 # Leaf-wise gradient boosting—excellent on tabular data.
 import lightgbm as lgb
 from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
+from src.util.DFImputer import DFImputer
 
 def train_model(X_train, y_train):
 
     pipeline =  Pipeline([
-        ("imputer", SimpleImputer(strategy="median")),
+        ("imputer", DFImputer(strategy="median")),
         ("clf", lgb.LGBMClassifier(
             objective="multiclass", # multiclass probabilities
             num_class=3,        # 3 outcomes: H/A/D
@@ -16,7 +16,8 @@ def train_model(X_train, y_train):
             subsample=0.9,          # row subsampling
             colsample_bytree=0.9,    # column subsampling
             reg_lambda=1.0,          #L2 regularization
-            random_state=0
+            random_state=0,  # Random seed
+            verbose=-1  # No outputs
     ))
     ])
 
