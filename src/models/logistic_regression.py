@@ -7,7 +7,7 @@ def train_model(X_train, y_train):
     pipeline = Pipeline([
         ('scaler', StandardScaler()), # Data standardization.
         ('clf', LogisticRegression(     # Classifier is Logistic Regression.
-            multi_class='multinomial',  # Quasi newton method good for multinomial on medium tabular data
+            # multi_class='multinomial',  # Quasi newton method good for multinomial on medium tabular data
             solver='lbfgs',
             max_iter=5000
         ))

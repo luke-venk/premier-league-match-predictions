@@ -4,13 +4,17 @@ training the model, and evaluation.
 """
 import os
 import pandas as pd
-from src.config import END_YEAR, NUM_SEASONS, N_MATCHES, SPORTSBOOK, MODEL
+from src.config import END_YEAR, NUM_SEASONS, N_MATCHES, SPORTSBOOK, MODEL, Models
 from src.data.load_data import get_processed_path, load_all_seasons
 from src.data.build_features import build_rolling_features
 from src.data.split import chrono_split
 from src.models.train_model import train
 from src.models.evaluate_model import evaluate
 from src.data.scrape_values import main as scrape_values
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score
 
 def main():
     print('>>> Processing data...')
@@ -38,6 +42,38 @@ def main():
 
     # Evaluate the model based on the holdout set.
     evaluate(model, X_test, y_test, show_confusion_matrix=True)
+    
+def plot_accuracy_vs_n():
+    df_raw = load_all_seasons(end_year=END_YEAR, num_seasons=NUM_SEASONS, sportsbook=SPORTSBOOK)
+    
+    # Create several DataFrames using rolling features of different window sizes for
+    # computing for statistics.
+    n_to_test = np.arange(1, 11)
+    
+    plt.figure()
+    
+    for model_type in Models:
+        accuracies = []
+        for n in n_to_test:
+            df = build_rolling_features(df=df_raw, n_matches=n)
+            # Use a 70-30 chronological train-test split.
+            X_train, y_train, X_test, y_test = chrono_split(df, train_ratio=0.7)
+            
+            # Train the model based on what type of model the user configured.
+            print(f'>>> Training {model_type.name.lower()} with N_MATCHES={n}')
+            model = train(model_type, X_train, y_train)
+            
+            # Evaluate the model based on the holdout set.
+            y_pred = model.predict(X_test)
+            
+            accuracies.append(accuracy_score(y_test, y_pred))
+        plt.plot(n_to_test, accuracies, label=model_type.name.lower())
+        
+    plt.xlabel('Number of Games Used to Compute Form Statistics')
+    plt.ylabel('Model Accuracy')
+    plt.title(f'Accuracy vs. N_MATCHES: NUM_SEASONS={NUM_SEASONS}')
+    plt.legend()
+    plt.savefig(f'plots/accuracy_vs_n_{NUM_SEASONS}_seasons.png')
 
 if __name__ == "__main__":
-    main()
+    plot_accuracy_vs_n()
