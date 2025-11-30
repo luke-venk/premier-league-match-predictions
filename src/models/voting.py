@@ -12,7 +12,7 @@ def train_model(X_train,y_train):
 
     # 1) Logistic Regression (good calibration baseline)
     lr = LogisticRegression(
-        multi_class="multinomial",
+        # multi_class="multinomial",
         solver="lbfgs",
         max_iter=5000,
         C=1.0,
