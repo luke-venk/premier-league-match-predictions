@@ -3,6 +3,7 @@ Compute rolling stats to reflect a team's form.
 """
 import numpy as np
 import pandas as pd
+from src.data.scrape_values import merge_valuations_into_dataframe
 
 def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
     """
@@ -61,6 +62,9 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
         
         # Fouls committed
         team_df["fouls_committed"] = team_df["home_fouls"].where(mask_home, team_df["away_fouls"])
+        
+        # Possession percentage
+        team_df["possession_pct"] = team_df["home_possession_pct"].where(mask_home, team_df["away_possession_pct"])
 
         # Win streak
         team_df["form_win_streak"] = consecutive_win_streak_before(team_df["wins"])
@@ -71,6 +75,9 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
             # shift() prevents data leakage by shifting the current row down and only including prior rows.
             # rolling(n_matches) creates rolling window of n_matches entries
             team_df[f"form_{col}"] = team_df[col].shift().rolling(n_matches, min_periods=1).sum()
+        
+        # For possession_pct, use mean instead of sum (more meaningful for percentages)
+        team_df["form_possession_pct"] = team_df["possession_pct"].shift().rolling(n_matches, min_periods=1).mean()
             
         # Add the team name as an identifier.
         team_df["team"] = team_name
@@ -87,7 +94,8 @@ def build_rolling_features(df: pd.DataFrame, n_matches: int) -> pd.DataFrame:
                 "form_goals_conceded",
                 "form_shots_on_target",
                 "form_fouls_committed",
-                "form_win_streak"
+                "form_win_streak",
+                "form_possession_pct"
             ]
         ]
     
