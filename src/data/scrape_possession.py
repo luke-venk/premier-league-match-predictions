@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter, Retry
 
 PROCESSED_BASE = Path("data/processed/processed_15_25_n10.csv")
+PROCESSED_DIR = Path("data/processed")
 RAW_OUT = Path("data/raw/fc_possession_raw.csv")
 
 SEASON_URLS = {
@@ -24,7 +25,7 @@ SEASON_URLS = {
     2025: "https://www.footballcritic.com/premier-league/season-2025-2026/matches/2/76035"
 }
 
-REQUEST_DELAY = 1.0
+REQUEST_DELAY = 0.5
 
 TEAM_NAME_MAP = {
     "Tottenham Hotspur": "Tottenham",
@@ -266,15 +267,13 @@ def analyze_possession_coverage(processed_file, raw_df):
     print("=" * 70 + "\n")
 
 
-def main():
-    sess = _mk_session()
-
+def scrape_possession_data(sess, processed_base, season_urls):
     print("Reading base processed match CSV...")
-    base_df = pd.read_csv(PROCESSED_BASE)
+    base_df = pd.read_csv(processed_base)
     base_df["date"] = pd.to_datetime(base_df["date"]).dt.date.astype(str)
 
     print("Building FootballCritic match index...")
-    index_df = _build_full_match_index(sess, SEASON_URLS)
+    index_df = _build_full_match_index(sess, season_urls)
 
     print("Merging index with base processed data...")
     merged = base_df.merge(
@@ -318,18 +317,44 @@ def main():
         records.append(rec)
 
     if not records:
-        print("No possession records scraped – nothing to write.")
-        return
+        print("No possession records scraped.")
+        return pd.DataFrame(
+            columns=[
+                "date",
+                "home_team",
+                "away_team",
+                "fc_url",
+                "home_possession_pct",
+                "away_possession_pct",
+                "possession_diff",
+            ]
+        )
 
     raw_df = pd.DataFrame(records)
+    return raw_df
 
-    RAW_OUT.parent.mkdir(parents=True, exist_ok=True)
 
-    print("Writing raw possession data to", RAW_OUT)
-    raw_df.to_csv(RAW_OUT, index=False)
+# ---------------------------------------------------------------------
+# NEW: helper to load cached possession data
+# ---------------------------------------------------------------------
+def load_cached_possession(path: Path = RAW_OUT) -> pd.DataFrame:
+    """
+    Load cached raw possession data from CSV.
+    Expects columns matching the output of scrape_possession_data().
+    """
+    print("Loading cached possession data from", path)
+    df = pd.read_csv(path)
+    return df
 
-    # Now merge possession_diff into ALL processed CSVs in data/processed
-    processed_dir = Path("data/processed")
+
+# ---------------------------------------------------------------------
+# NEW: merging function that works with ANY possession table
+# ---------------------------------------------------------------------
+def merge_possession_into_processed(raw_df: pd.DataFrame, processed_dir: Path = PROCESSED_DIR):
+    raw_df = raw_df.copy()
+    raw_df["date"] = pd.to_datetime(raw_df["date"]).dt.date.astype(str)
+
+    processed_dir = Path(processed_dir)
     csv_files = sorted(processed_dir.glob("*.csv"))
 
     for processed_file in csv_files:
@@ -341,8 +366,7 @@ def main():
             df = pd.read_csv(processed_file)
             print("Loaded match data:", len(df), "rows")
 
-            if "date" in df.columns:
-                df["date"] = pd.to_datetime(df["date"]).dt.date.astype(str)
+            df["date"] = pd.to_datetime(df["date"]).dt.date.astype(str)
 
             if "possession_diff" in df.columns:
                 df = df.drop(columns=["possession_diff"])
@@ -367,6 +391,20 @@ def main():
         except Exception as e:
             print("Error processing", processed_file.name, ":", e)
             continue
+
+
+def main():
+    # SCRAPE FRESH
+    # sess = _mk_session()
+    # raw_df = scrape_possession_data(sess, PROCESSED_BASE, SEASON_URLS)
+    # RAW_OUT.parent.mkdir(parents=True, exist_ok=True)
+    # print("Writing raw possession data to", RAW_OUT)
+    # raw_df.to_csv(RAW_OUT, index=False)
+
+    # LOAD CACHED
+    raw_df = load_cached_possession(RAW_OUT)
+
+    merge_possession_into_processed(raw_df, PROCESSED_DIR)
 
 
 if __name__ == "__main__":
