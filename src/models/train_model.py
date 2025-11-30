@@ -41,11 +41,11 @@ def train(model_type: int, X_train: pd.DataFrame, y_train: pd.Series):
     elif model_type == Models.NAIVE_BAYES:
         model = naivebayes.train_model(X_train, y_train) #6
 
-    elif model_type == Models.LIGHTGBM:
-        model = lightGBM.train_model(X_train, y_train) #7
+    # elif model_type == Models.LIGHTGBM:
+    #     model = lightGBM.train_model(X_train, y_train) #7
     
-    elif model_type == Models.VOTING:
-        model = voting.train_model(X_train, y_train) #8
+    # elif model_type == Models.VOTING:
+    #     model = voting.train_model(X_train, y_train) #8
 
     else:
         raise ValueError(f'Unknown model type: {model_type}')
