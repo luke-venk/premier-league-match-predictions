@@ -334,63 +334,34 @@ def scrape_possession_data(sess, processed_base, season_urls):
     return raw_df
 
 
-# ---------------------------------------------------------------------
-# NEW: helper to load cached possession data
-# ---------------------------------------------------------------------
 def load_cached_possession(path: Path = RAW_OUT) -> pd.DataFrame:
-    """
-    Load cached raw possession data from CSV.
-    Expects columns matching the output of scrape_possession_data().
-    """
     print("Loading cached possession data from", path)
     df = pd.read_csv(path)
     return df
 
 
-# ---------------------------------------------------------------------
-# NEW: merging function that works with ANY possession table
-# ---------------------------------------------------------------------
-def merge_possession_into_processed(raw_df: pd.DataFrame, processed_dir: Path = PROCESSED_DIR):
-    raw_df = raw_df.copy()
-    raw_df["date"] = pd.to_datetime(raw_df["date"]).dt.date.astype(str)
-
-    processed_dir = Path(processed_dir)
-    csv_files = sorted(processed_dir.glob("*.csv"))
-
-    for processed_file in csv_files:
-        print("\n" + "=" * 70)
-        print("Processing:", processed_file.name)
-        print("=" * 70)
-
-        try:
-            df = pd.read_csv(processed_file)
-            print("Loaded match data:", len(df), "rows")
-
-            df["date"] = pd.to_datetime(df["date"]).dt.date.astype(str)
-
-            if "possession_diff" in df.columns:
-                df = df.drop(columns=["possession_diff"])
-
-            df = df.merge(
-                raw_df[["date", "home_team", "away_team", "possession_diff"]],
-                on=["date", "home_team", "away_team"],
-                how="left",
-                validate="m:1",
-            )
-
-            df.to_csv(processed_file, index=False)
-            print("Updated match data saved to", processed_file)
-            print("Added/updated column: possession_diff")
-
-            # Coverage analysis
-            print("\n" + "-" * 70)
-            print("COVERAGE ANALYSIS (using raw possession data)")
-            print("-" * 70)
-            analyze_possession_coverage(str(processed_file), raw_df)
-
-        except Exception as e:
-            print("Error processing", processed_file.name, ":", e)
-            continue
+def merge_possession_into_dataframe(df: pd.DataFrame, possession_csv_path: Path = RAW_OUT) -> pd.DataFrame:
+    # Load possession data
+    possession_df = pd.read_csv(possession_csv_path)
+    possession_df["date"] = pd.to_datetime(possession_df["date"]).dt.date.astype(str)
+    
+    # Prepare input df
+    df = df.copy()
+    df["date"] = pd.to_datetime(df["date"]).dt.date.astype(str)
+    
+    # Drop old possession columns if they exist
+    cols_to_drop = ["possession_diff", "home_possession_pct", "away_possession_pct"]
+    df = df.drop(columns=[c for c in cols_to_drop if c in df.columns])
+    
+    # Merge
+    df = df.merge(
+        possession_df[["date", "home_team", "away_team", "home_possession_pct", "away_possession_pct", "possession_diff"]],
+        on=["date", "home_team", "away_team"],
+        how="left",
+        validate="m:1",
+    )
+    
+    return df
 
 
 def main():
@@ -401,10 +372,23 @@ def main():
     # print("Writing raw possession data to", RAW_OUT)
     # raw_df.to_csv(RAW_OUT, index=False)
 
-    # LOAD CACHED
-    raw_df = load_cached_possession(RAW_OUT)
-
-    merge_possession_into_processed(raw_df, PROCESSED_DIR)
+    # Update all processed CSV files with possession data
+    processed_dir = Path(PROCESSED_DIR)
+    csv_files = sorted(processed_dir.glob("*.csv"))
+    
+    for processed_file in csv_files:
+        print("\n" + "=" * 70)
+        print("Processing:", processed_file.name)
+        print("=" * 70)
+        
+        df = pd.read_csv(processed_file)
+        print("Loaded match data:", len(df), "rows")
+        
+        df = merge_possession_into_dataframe(df, RAW_OUT)
+        
+        df.to_csv(processed_file, index=False)
+        print("Updated match data saved to", processed_file)
+        print("Added/updated columns: home_possession_pct, away_possession_pct, possession_diff")
 
 
 if __name__ == "__main__":

@@ -10,7 +10,8 @@ from src.data.build_features import build_rolling_features
 from src.data.split import chrono_split
 from src.models.train_model import train
 from src.models.evaluate_model import evaluate
-from src.data.scrape_values import main as scrape_values
+from src.data.scrape_values import merge_valuations_into_dataframe
+from src.data.scrape_possession import merge_possession_into_dataframe
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -29,6 +30,8 @@ def main():
     # Otherwise, load and process the dataset, saving it to the processed data directory for future use.
     else:
         df_raw = load_all_seasons(end_year=END_YEAR, num_seasons=NUM_SEASONS, sportsbook=SPORTSBOOK)
+        df_raw = merge_possession_into_dataframe(df_raw)
+        df_raw = merge_valuations_into_dataframe(df_raw, "data/raw/tm_pl_all_columns.csv", "2015-07-01")
         df = build_rolling_features(df=df_raw, n_matches=N_MATCHES)
         df.to_csv(PROCESSED_DATA_PATH, index=False)
 
@@ -45,6 +48,8 @@ def main():
     
 def plot_accuracy_vs_n():
     df_raw = load_all_seasons(end_year=END_YEAR, num_seasons=NUM_SEASONS, sportsbook=SPORTSBOOK)
+    df_raw = merge_possession_into_dataframe(df_raw)
+    df_raw = merge_valuations_into_dataframe(df_raw, "data/raw/tm_pl_all_columns.csv", "2015-07-01")
     
     # Create several DataFrames using rolling features of different window sizes for
     # computing for statistics.
@@ -76,4 +81,5 @@ def plot_accuracy_vs_n():
     plt.savefig(f'plots/accuracy_vs_n_{NUM_SEASONS}_seasons.png')
 
 if __name__ == "__main__":
-    plot_accuracy_vs_n()
+    # plot_accuracy_vs_n()
+    main()
