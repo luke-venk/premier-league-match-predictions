@@ -10,13 +10,13 @@ def train_model(X_train,y_train):
         ("clf",  XGBClassifier(
             objective="multi:softprob",  # multiclass probabilities
             num_class=3,                 # 3 outcomes: H/A/D
-            n_estimators=600,            # number of boosted trees
-            max_depth=4,                 # shallower trees generalize better
-            learning_rate=0.05,          # shrinkage
-            subsample=0.9,               # row subsampling
-            colsample_bytree=0.9,        # column subsampling
-            reg_lambda=1.0,              # L2 regularization
-            tree_method="hist",          # fast histogram-based
+            n_estimators=300,            # Number of boosted trees (tuned)
+            max_depth=3,                 # Shallower trees generalize better (tuned)
+            learning_rate=0.05,          # Shrinkage (tuned)
+            subsample=0.9,               # Row subsampling (tuned)
+            colsample_bytree=0.8,        # Column subsampling (tuned)
+            reg_lambda=1.0,              # L2 regularization (tuned)
+            tree_method="hist",          # Fast histogram-based
             eval_metric="mlogloss",
             random_state=0,
             n_jobs=-1

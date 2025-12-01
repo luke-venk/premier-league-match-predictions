@@ -9,7 +9,10 @@ def train_model(X_train, y_train):
         ('clf', LogisticRegression(     # Classifier is Logistic Regression.
             # multi_class='multinomial',  # Quasi newton method good for multinomial on medium tabular data
             solver='lbfgs',
-            max_iter=5000
+            penalty='l2',
+            C=0.1,  # tuned
+            max_iter=5000,
+            random_state=0
         ))
     ])
     
