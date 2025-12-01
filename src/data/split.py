@@ -5,6 +5,7 @@ to retain chronological information related to form, as opposed to random
 sampling.
 """
 import pandas as pd
+from src.data.build_features import get_feature_columns
 
 def chrono_split(df: pd.DataFrame, train_ratio: float = 0.7) -> tuple:
     """
@@ -29,9 +30,8 @@ def chrono_split(df: pd.DataFrame, train_ratio: float = 0.7) -> tuple:
     # Sort by date again just in case.
     df_proc = df_proc.sort_values('date').reset_index(drop=True)
     
-    # Use only previous data and odds as features in the model.
-    feature_cols = [c for c in df_proc.columns if c.startswith('form_')]
-    feature_cols += ['odds_home_win', 'odds_draw', 'odds_away_win', 'elo_home_pre', 'elo_away_pre']
+    # Dynamically get feature columns based on configuration
+    feature_cols = get_feature_columns(df_proc.columns)
 
     # Make feature matrix X and target y.
     X = df_proc[feature_cols].copy()

@@ -18,7 +18,7 @@ class Models(Enum):
     VOTING              = auto()
 
 # The specific model we plan to train and evaluate. Options:
-MODEL = Models.VOTING
+MODEL = Models.SVM
 
 # The year ending the Premier League season we would like to consider.
 # e.g., 25 would indicate the Premier League 24/25 season.
@@ -33,3 +33,24 @@ NUM_SEASONS = 10
 # aggregate
 # B365
 SPORTSBOOK = "aggregate"
+
+# Enable/disable Elo rating features
+USE_ELO = True
+
+# Enable/disable head-to-head (H2H) history features
+USE_H2H = True
+
+# Enable/disable difference features (home - away)
+USE_DIFF = True
+
+# When using difference features, delete the original home/away columns
+# This reduces feature dimensionality and can help with some models
+DELETE_ORIGINAL_DIFF = True
+
+# Use a curated subset of features (only available when USE_DIFF=True)
+# When True, uses only these 11 features:
+#   - form_possession_pct_diff, elo_diff_pre, form_goals_conceded_diff
+#   - form_win_streak_diff, form_shots_on_target_diff
+#   - odds_home_win, odds_away_win, odds_draw
+#   - form_goals_scored_diff, form_wins_diff, h2h_draws
+FEWER_FEATURES = False
