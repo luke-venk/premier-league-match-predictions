@@ -18,7 +18,8 @@ def train_model(X_train,y_train):
             reg_lambda=1.0,              # L2 regularization
             tree_method="hist",          # fast histogram-based
             eval_metric="mlogloss",
-            random_state=0
+            random_state=0,
+            n_jobs=-1
         ))
     ])
 

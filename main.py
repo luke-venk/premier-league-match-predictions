@@ -81,5 +81,4 @@ def plot_accuracy_vs_n():
     plt.savefig(f'plots/accuracy_vs_n_{NUM_SEASONS}_seasons.png')
 
 if __name__ == "__main__":
-    # plot_accuracy_vs_n()
-    main()
+    plot_accuracy_vs_n()

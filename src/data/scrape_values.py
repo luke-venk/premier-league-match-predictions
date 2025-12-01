@@ -441,7 +441,7 @@ def merge_valuations_into_dataframe(df: pd.DataFrame, val_csv=OUTPUT_CSV, from_d
     # Load valuation data
     try:
         val_data = pd.read_csv(val_csv)
-        print(f"Loaded valuation data: {len(val_data)} rows")
+        # print(f">>> Loaded valuation data: {len(val_data)} rows")
     except FileNotFoundError:
         print(f"Error: Could not find valuation file: {val_csv}")
         print("Please run scraper first or ensure the file exists.")
@@ -458,15 +458,15 @@ def merge_valuations_into_dataframe(df: pd.DataFrame, val_csv=OUTPUT_CSV, from_d
     
     # Copy input dataframe
     match_df = df.copy()
-    print(f"Processing match data: {len(match_df)} rows")
+    # print(f">>> Processing match data: {len(match_df)} rows")
     
     match_df["_match_date"] = pd.to_datetime(match_df["date"], errors="coerce")
     
-    print("Merging home team valuations...")
+    # print(">>> Merging home team valuations...")
     match_df["home_team_normalized"] = match_df["home_team"].apply(normalize_team_name)
     match_df = merge_team_values(match_df, val_df, "home_team", "home_team_normalized", "_match_date", "home")
     
-    print("Merging away team valuations...")
+    # print(">>> Merging away team valuations...")
     match_df["away_team_normalized"] = match_df["away_team"].apply(normalize_team_name)
     match_df = merge_team_values(match_df, val_df, "away_team", "away_team_normalized", "_match_date", "away")
 
@@ -502,7 +502,7 @@ def merge_valuations_into_dataframe(df: pd.DataFrame, val_csv=OUTPUT_CSV, from_d
     
     match_df = match_df.drop(columns=["home_team_normalized", "away_team_normalized", "_match_date"], errors="ignore")
     
-    print("Added/updated columns: home_squad_size, away_squad_size, home_squad_value_log_z, away_squad_value_log_z, squad_value_log_advantage_z")
+    # print(">>> Added/updated columns: home_squad_size, away_squad_size, home_squad_value_log_z, away_squad_value_log_z, squad_value_log_advantage_z")
     
     return match_df
 

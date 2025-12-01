@@ -18,7 +18,7 @@ class Models(Enum):
     VOTING              = auto()
 
 # The specific model we plan to train and evaluate. Options:
-MODEL = Models.SVM
+MODEL = Models.LOGISTIC_REGRESSION
 
 # The year ending the Premier League season we would like to consider.
 # e.g., 25 would indicate the Premier League 24/25 season.
