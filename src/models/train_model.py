@@ -9,7 +9,6 @@ from src.models import randomforest
 from src.models import naivebayes
 from src.models import mlpffnn
 from src.models import SVM
-from src.models import lightGBM
 from src.models import voting
 
 def train(model_type: int, X_train: pd.DataFrame, y_train: pd.Series):
@@ -24,28 +23,25 @@ def train(model_type: int, X_train: pd.DataFrame, y_train: pd.Series):
         A DataFrame with our data.
     """
     if model_type == Models.LOGISTIC_REGRESSION:
-        model = logistic_regression.train_model(X_train, y_train) #1
+        model = logistic_regression.train_model(X_train, y_train)
 
     elif model_type == Models.XGBOOST:
-        model = XGboost.train_model(X_train, y_train) #2
+        model = XGboost.train_model(X_train, y_train)
 
     elif model_type == Models.RANDOM_FOREST:
-        model = randomforest.train_model(X_train, y_train) #3
+        model = randomforest.train_model(X_train, y_train)
 
     elif model_type == Models.SVM:
-        model = SVM.train_model(X_train, y_train) #4
+        model = SVM.train_model(X_train, y_train)
 
     elif model_type == Models.MLPFFNN:
-        model = mlpffnn.train_model(X_train, y_train) #5
+        model = mlpffnn.train_model(X_train, y_train)
 
     elif model_type == Models.NAIVE_BAYES:
-        model = naivebayes.train_model(X_train, y_train) #6
-
-    elif model_type == Models.LIGHTGBM:
-        model = lightGBM.train_model(X_train, y_train) #7
+        model = naivebayes.train_model(X_train, y_train)
     
     elif model_type == Models.VOTING:
-        model = voting.train_model(X_train, y_train) #8
+        model = voting.train_model(X_train, y_train)
 
     else:
         raise ValueError(f'Unknown model type: {model_type}')

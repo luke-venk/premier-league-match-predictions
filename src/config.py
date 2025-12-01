@@ -14,7 +14,6 @@ class Models(Enum):
     SVM                 = auto()
     MLPFFNN             = auto()
     NAIVE_BAYES         = auto()
-    LIGHTGBM            = auto()
     VOTING              = auto()
 
 # The specific model we plan to train and evaluate. Options:

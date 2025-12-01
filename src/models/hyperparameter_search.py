@@ -3,15 +3,6 @@ Reusable utilities for running hyperparameter searches in notebook files.
 """
 import time
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import accuracy_score, f1_score
-from sklearn.linear_model import LogisticRegression
-from xgboost import XGBClassifier
-from sklearn.ensemble import RandomForestClassifier, VotingClassifier, HistGradientBoostingClassifier
-from sklearn.svm import SVC
-from sklearn.neural_network import MLPClassifier
-from sklearn.naive_bayes import GaussianNB
-import lightgbm as lgb
-from src.config import Models
 
 def tune_model(name, model, params, X_train, y_train, cv=5):
     """

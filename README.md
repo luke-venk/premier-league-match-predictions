@@ -19,16 +19,16 @@ Activate the virtual environment:
 Download the required packages into the virtual environment:  
 `pip3 install -r requirements.txt`
 
-Some Unix machines may not support OpenMP runtime libomp.dylib for XGboost and lightGBM easiest fix is to homebrew install and ensure loader can see it
-in bash
-
+Some Unix machines may not support OpenMP runtime libomp.dylib for XGBoost. The easiest fix is to homebrew install and ensure loader can see it in bash:
+```
 python3 -m venv .venv && source .venv/bin/activate
 brew install libomp
 export DYLD_LIBRARY_PATH="/opt/homebrew/opt/libomp/lib:$DYLD_LIBRARY_PATH"
 pip install --upgrade pip
 pip3 install -r requirements.txt
+```
 
-alternatively in train_model.py comment out lines 7 and 12 and don't use XGboost or lightGBM
+Alternatively, don't use XGBoost train_model.py.
 
 ## Features
 Given any match, we will engineer features over the last N games a team has played, which indicates a team's form, which is very relevant in soccer. We then consider the following features for both the home and away team in a given match, over the last N games:  
