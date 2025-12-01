@@ -1,7 +1,9 @@
+"""Voting ensemble method using our 3 highest performing individual models."""
+
 from sklearn.pipeline import Pipeline
 from src.util.DFImputer import DFImputer
 from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import VotingClassifier, RandomForestClassifier, HistGradientBoostingClassifier
+from sklearn.ensemble import VotingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 import xgboost as xgb
 
@@ -11,11 +13,12 @@ def train_model(X_train,y_train):
 
     # 1) Logistic Regression
     lr_pipe = Pipeline([
-        ("scaler", StandardScaler()), # Must be scaled
-        ("clf", LogisticRegression(
-            solver="lbfgs",
+        ('scaler', StandardScaler()),
+        ('clf', LogisticRegression(
+            solver='lbfgs',
+            penalty='l2',
+            C=0.1,
             max_iter=5000,
-            C=1.0,
             random_state=0
         ))
     ])
@@ -24,51 +27,38 @@ def train_model(X_train,y_train):
     # 2) Random Forest
     rf_pipe = Pipeline([
         ("clf", RandomForestClassifier(
-            n_estimators=500,
-            max_depth=None,
-            max_features="sqrt",
-            n_jobs=-1,
+            n_estimators=600,
+            max_depth=20,
+            min_samples_leaf=1,
+            class_weight="balanced",
             random_state=0
         ))
     ])
     estimators.append(("rf", rf_pipe))
 
-    # 3) HistGradientBoosting
-    hgb_pipe = Pipeline([
-        ("clf", HistGradientBoostingClassifier(
-            loss="log_loss",
-            learning_rate=0.06,
-            max_depth=6,
-            max_iter=600,
-            random_state=0
-        ))
-    ])
-    estimators.append(("hgb", hgb_pipe))
-
-    # 4) XGBoost
+    # 3) XGBoost
     xgb_pipe = Pipeline([
         ("clf", xgb.XGBClassifier(
             objective="multi:softprob",
             num_class=3,
-            n_estimators=500,
-            learning_rate=0.06,
-            max_depth=6,
+            n_estimators=300,
+            max_depth=3,
+            learning_rate=0.05,
             subsample=0.9,
-            colsample_bytree=0.9,
+            colsample_bytree=0.8,
             reg_lambda=1.0,
             tree_method="hist",
-            n_jobs=-1,
-            random_state=0,
             eval_metric="mlogloss",
-            verbosity=0
+            random_state=0,
+            n_jobs=-1
         ))
     ])
     estimators.append(("xgb", xgb_pipe))
 
-    # We can bias the vote by passing weights=[...]; else equal weights
     vc = VotingClassifier(
         estimators=estimators,
         voting="soft",
+        weights=[3, 1, 2],   # Voting weights (tuned)
         n_jobs=-1
     )
 

@@ -8,10 +8,10 @@ def train_model(X_train,y_train):
     pipeline = Pipeline([
         ("imputer", DFImputer(strategy="median")),
         ("clf", RandomForestClassifier(
-            n_estimators=600,       # more trees -> lower variance
-            max_depth=None,         # let trees expand; we control with min_samples_leaf
-            min_samples_leaf=2,     # regularization to avoid overfit on tiny leaves
-            class_weight="balanced",# help minority class (often draws)
+            n_estimators=600,        # More trees -> lower variance (tuned)
+            max_depth=20,            # Let trees expand; we control with min_samples_leaf (tuned)
+            min_samples_leaf=1,      # Regularization to avoid overfit on tiny leaves (tuned)
+            class_weight="balanced", # Help minority class (often draws)
             random_state=0
         ))
     ])

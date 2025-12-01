@@ -46,7 +46,7 @@ def main():
     # Evaluate the model based on the holdout set.
     evaluate(model, X_test, y_test, show_confusion_matrix=True)
     
-def plot_accuracy_vs_n():
+def plot_accuracy_vs_n(label: str):
     df_raw = load_all_seasons(end_year=END_YEAR, num_seasons=NUM_SEASONS, sportsbook=SPORTSBOOK)
     df_raw = merge_possession_into_dataframe(df_raw)
     df_raw = merge_valuations_into_dataframe(df_raw, "data/raw/tm_pl_all_columns.csv", "2015-07-01")
@@ -78,7 +78,7 @@ def plot_accuracy_vs_n():
     plt.ylabel('Model Accuracy')
     plt.title(f'Accuracy vs. N_MATCHES: NUM_SEASONS={NUM_SEASONS}')
     plt.legend()
-    plt.savefig(f'plots/accuracy_vs_n_{NUM_SEASONS}_seasons.png')
+    plt.savefig(f'plots/accuracy_vs_n_{NUM_SEASONS}_seasons{label}.png')
 
 if __name__ == "__main__":
-    plot_accuracy_vs_n()
+    plot_accuracy_vs_n('_tuned')
