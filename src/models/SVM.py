@@ -9,7 +9,7 @@ def train_model(X_train, y_train):
         ("imputer", DFImputer(strategy="median")),
         ("scaler", StandardScaler()),
         ("clf", SVC(
-            kernel="rbf",            # Kernel (tuned)
+            kernel="linear",            # Kernel (tuned)
             C=0.5,                   # Regularization strength (tuned)
             gamma="scale",           # RBF width (tuned)
             probability=True,        # enable predict_proba (needed for log loss/Brier)

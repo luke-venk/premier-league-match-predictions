@@ -11,10 +11,10 @@ def train_model(X_train, y_train):
         ("imputer", DFImputer(strategy="median")),
         ("scaler", StandardScaler()),
         ("clf", MLPClassifier(
-            hidden_layer_sizes=(128, 64),  # Two-layer FFN (tuned)
+            hidden_layer_sizes=(128, 64, 32),  # Two-layer FFN (tuned)
             activation="tanh",             # Activation function (tuned)
             solver="adam",                 # Adam optimizer
-            alpha=0.0001,                  # L2 weight decay (tuned)
+            alpha=0.01,                  # L2 weight decay (tuned)
             learning_rate_init=0.01,       # Learning rate (tuned)
             max_iter=5000,
             random_state=0
