@@ -45,13 +45,16 @@ def get_data(end_year: int=END_YEAR,
     # returns X_train, y_train, X_test, y_test.
     return chrono_split(df, train_ratio=0.7)
 
+
 def get_model_accuracy(model: int=MODEL,
                        end_year: int=END_YEAR,
                        num_seasons: int=NUM_SEASONS,
                        sportsbook: str=SPORTSBOOK,
-                       n_matches: int=N_MATCHES):
+                       n_matches: int=N_MATCHES,
+                       show_confusion_matrix: bool=False):
     """
-    Prints classification report
+    Prints classification report and optionally display the confusion matrix
+    for a given model based on the data.
     """
     X_train, y_train, X_test, y_test = get_data(end_year, num_seasons, sportsbook, n_matches)
     
@@ -60,4 +63,14 @@ def get_model_accuracy(model: int=MODEL,
     model = train(model, X_train, y_train)
 
     # Evaluate the model based on the holdout set.
-    evaluate(model, X_test, y_test, show_confusion_matrix=True)
+    evaluate(model, X_test, y_test, show_confusion_matrix)
+    
+
+def weight_vectors(num: int=3):
+    """
+    Helper function to return a set of several weight vectors
+    for the voting model.
+    """
+    return [[i, j, k] for i in range(1, num + 1)
+                      for j in range(1, num + 1)
+                      for k in range(1, num + 1)]
