@@ -58,7 +58,7 @@ def train_model(X_train,y_train):
     vc = VotingClassifier(
         estimators=estimators,
         voting="soft",
-        weights=[3, 1, 2],   # Voting weights (tuned)
+        weights=[3, 1, 1],   # Voting weights (tuned)
         n_jobs=-1
     )
 
