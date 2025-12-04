@@ -4,6 +4,7 @@ the notebooks/ directory.
 """
 import os
 import pandas as pd
+from sklearn.metrics import accuracy_score
 
 from src.data.load_data import get_processed_path, load_all_seasons
 from src.config import END_YEAR, NUM_SEASONS, N_MATCHES, SPORTSBOOK, MODEL
@@ -14,13 +15,12 @@ from src.data.split import chrono_split
 from src.models.train_model import train
 from src.models.evaluate_model import evaluate
 
-def get_data(end_year: int=END_YEAR,
-             num_seasons: int=NUM_SEASONS,
-             sportsbook: str=SPORTSBOOK,
-             n_matches: int=N_MATCHES):
+def get_data_only(end_year: int=END_YEAR,
+                  num_seasons: int=NUM_SEASONS,
+                  sportsbook: str=SPORTSBOOK):
     """
-    Helper function to automate X_train, y_train, X_test, and y_test based on
-    configuration parameters.
+    Helper function to return the raw DataFrame of data used to
+    engineer the features, before actually engineering the features.
     """
     processed_data_path = get_processed_path(end_year, num_seasons)
     
@@ -38,6 +38,19 @@ def get_data(end_year: int=END_YEAR,
         # Write to file, so we can reuse as needed.
         df_raw.to_csv(processed_data_path, index=False)
     
+    return df_raw
+
+def get_feature_matrix(end_year: int=END_YEAR,
+                       num_seasons: int=NUM_SEASONS,
+                       sportsbook: str=SPORTSBOOK,
+                       n_matches: int=N_MATCHES):
+    """
+    Helper function to automate X_train, y_train, X_test, and y_test based on
+    configuration parameters.
+    """
+    # Get the raw DataFrame using the previous helper function.
+    df_raw = get_data_only(end_year, num_seasons, sportsbook)
+    
     # Engineer feature matrix.    
     df = build_rolling_features(df=df_raw, n_matches=n_matches)
     
@@ -50,20 +63,20 @@ def get_model_accuracy(model: int=MODEL,
                        end_year: int=END_YEAR,
                        num_seasons: int=NUM_SEASONS,
                        sportsbook: str=SPORTSBOOK,
-                       n_matches: int=N_MATCHES,
-                       show_confusion_matrix: bool=False):
+                       n_matches: int=N_MATCHES):
     """
     Prints classification report and optionally display the confusion matrix
     for a given model based on the data.
     """
-    X_train, y_train, X_test, y_test = get_data(end_year, num_seasons, sportsbook, n_matches)
+    X_train, y_train, X_test, y_test = get_feature_matrix(end_year, num_seasons, sportsbook, n_matches)
     
     # Train the model based on what type of model the user configured.
     print('>>> Training model...')
     model = train(model, X_train, y_train)
 
     # Evaluate the model based on the holdout set.
-    evaluate(model, X_test, y_test, show_confusion_matrix)
+    y_pred = model.predict(X_test)
+    return accuracy_score(y_test, y_pred)
     
 
 def weight_vectors(num: int=3):
