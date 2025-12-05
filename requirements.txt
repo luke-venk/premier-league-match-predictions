@@ -1,8 +1,8 @@
-pandas
-scikit-learn
-matplotlib
-xgboost
-requests
-lxml
 bs4
 joblib
+lxml
+matplotlib
+pandas
+requests
+scikit-learn
+xgboost
