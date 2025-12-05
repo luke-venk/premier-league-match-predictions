@@ -1,7 +1,9 @@
 bs4
 joblib
+Flask
 lxml
 matplotlib
+numpy
 pandas
 requests
 scikit-learn
