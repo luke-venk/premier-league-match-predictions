@@ -1,0 +1,9 @@
+---
+services:
+  flask-api:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    image: lukevenk1/premier-league-match-predictions:1.0
+    ports:
+      - 5000:5000
