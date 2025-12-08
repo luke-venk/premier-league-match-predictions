@@ -3,11 +3,12 @@ Compute rolling stats to reflect a team's form.
 """
 import numpy as np
 import pandas as pd
+from src.config import N_MATCHES
 from src.data.scrape_values import merge_valuations_into_dataframe
 
 def build_rolling_features(
     df: pd.DataFrame, 
-    n_matches: int, 
+    n_matches: int = N_MATCHES, 
     elo: bool = None, 
     h2h: bool = None, 
     diff: bool = None,
