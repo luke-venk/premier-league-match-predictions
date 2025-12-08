@@ -89,6 +89,12 @@ def inference():
             "The input you provided is not valid. "
             "Please provide both the 'home_team' and 'away_team' fields."
             }), 400
+
+    # Ensure the same team wasn't provided twice.
+    if home_team == away_team:
+        return jsonify({"error": 
+            "The input you provided is not valid. Please enter two different teams."
+            }), 400
     
     # Ensure both teams are actually in the Premier League for the latest
     # season.
