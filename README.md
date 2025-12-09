@@ -10,25 +10,27 @@ This study aims to improve upon prior approaches of using machine learning for p
 This README is designed to be lightweight, providing the user with just the information the user needs to use the application. For a more detailed explanation of this project, please refer to one of the following:
 - [Report](TODO)
 - [Presentation Slides](https://docs.google.com/presentation/d/10yDmUe-KwvAvrPvzXGmXdAeF3LhDp9UKxyo9cHAXkhM/edit?slide=id.p#slide=id.p)
-- [Video Demonstration](TODO)
+- [Video Demonstration](https://youtu.be/VFaKTJ81YvU)
 
 ## Data
 We use a few data sources for this project. Firstly, we used [Football-Data.co.uk](https://football-data.co.uk/englandm.php) as our primary data source for match statistics (goals, shots, fouls, etc.). In addition, we used data from [TransferMarkt](https://www.transfermarkt.co.uk/premier-league/startseite/wettbewerb/GB1) to provide the estimated market valuation of the teams in a given match. Finally, we used [FootballCritic](https://www.footballcritic.com/premier-league/season-2025-2026/2/76035) to scrape possession data.
 
+We included 10 seasons of data, from the 2015/2016 season to the most recently complete 2024/2025 season. We used a 70-30 chronological split, training our models on the seasons from 2015/2016 to 2021/2022, and evaluating performance using the seasons 2022/2023 to 2024/2025.
+
 ## Model
-When creating our models, we included 10 seasons of data, from the 2015/2016 season to the most recently complete 2024/2025 season. We used a 70-30 chronological split, training our models on the seasons from 2015/2016 to 2021/2022, and evaluating performance using the seasons 2022/2023 to 2024/2025. After extensive analysis (can be found in our notebooks/ directory), we deployed our best performing model, which was **Logistic Regression** with N_MATCHES set to 5. The user will be able to interact with the model by using the inference server, so they can predict match outcomes for the latest season, the 2024/2025 Premier League season.
+After extensive analysis (can be found in our notebooks/ directory), we deployed our best performing model, which was a **Voting Ensemble** method combining Logistic Regression, XGBoost, and Random Forest. The user will be able to interact with the model by using the inference server, so they can predict match outcomes for the latest season, the 2024/2025 Premier League season. The directions for interacting with the inference server can be found below.
 
 ## Deploying the Inference Server
 There are 2 ways the user can deploy the inference server:
 
-### Pull Image from Docker Hub (TODO: update)
+### Pull Image from Docker Hub
 To quickly run the container using a prebuilt image pushed to Docker Hub, the user can run the following command:  
-```docker pull lukevenk1/hurricane-inference:1.0```   
+```docker pull lukevenk1/premier-league-match-predictions:1.0```   
 
 After the image has been pulled, to run the container, the user can run the following command:  
-```docker run -p 5000:5000 lukevenk1/hurricane-inference:1.0```
+```docker run -p 5000:5000 lukevenk1/premier-league-match-predictions:1.0```
 
-### Build and Run Using the Source Code (TODO: update)
+### Build and Run Using the Source Code
 If the user would rather clone all the source code and rebuild the image locally, they can do so by cloning our repository and using Docker Compose.
 
 For simplification, we use a Makefile to automate the building and deployment of the Docker container. If the user uses the Makefile, by default it will bring any existing container down and then restart it:  
@@ -46,37 +48,29 @@ Doing any of the above 3 commands will start the container on the local machine 
 Once the inference server is running, the user can make 3 types of requests to interact with our inference server.  
 
 ### 1. `/summary` (GET)
-If the user would like a summary of the highest accuracies each model achieved with our data, they can send a GET request to /summary:  
+If the user would like a summary of the highest training and testing accuracies each model achieved with our data, they can send a GET request to /summary:  
 ```curl localhost:5000/summary```  
-TODO: example
 
 ### 2. `/teams` (GET)
-If the user would like a summary of all the current teams in the Premier League for the most current season (2024/2025), they can send a GET request to /teams:  
+If the user would like a summary of all the current teams in the Premier League for the most current season (2024/2025), they can send a GET request to /teams. This will be particularly useful if they wish to have the model make a match prediction:  
 ```curl localhost:5000/teams```  
-TODO: example
 
-### 3. `/inference` (POST)
-```curl -X POST localhost:5000/inference -H "Content-Type: application/json" -d '{"home_team": <home_team>, "away_team": <away_team>}'```  
-TODO: example
+### 3. `/predict` (POST)
+If the user would like the model to predict the outcome of a match between two Premier League teams, they can run the following command. Note that this make take a few seconds since the application will have to use previous data to engineer the relevant features:  
+```curl -X POST localhost:5000/predict -H "Content-Type: application/json" -d '{"home_team": <home_team>, "away_team": <away_team>}'```  
 
-
-## Set up virtual environment (TODO: remove)
-To deal with dependencies, create a virtual environment (ignored from repository):  
-`python3 -m venv venv`  
-
-Activate the virtual environment:  
-`source venv/bin/activate`  
-
-Download the required packages into the virtual environment:  
-`pip3 install -r requirements.txt`
-
-Some Unix machines may not support OpenMP runtime libomp.dylib for XGBoost. The easiest fix is to homebrew install and ensure loader can see it in bash:
+Here is an example:
 ```
-python3 -m venv .venv && source .venv/bin/activate
-brew install libomp
-export DYLD_LIBRARY_PATH="/opt/homebrew/opt/libomp/lib:$DYLD_LIBRARY_PATH"
-pip install --upgrade pip
-pip3 install -r requirements.txt
-```
+curl -X POST localhost:5000/predict -H "Content-Type: application/json" -d '{"home_team": "Liverpool", "away_team": "Man United"}'
 
-Alternatively, don't use XGBoost train_model.py.
+{
+  "home_team": "Liverpool",
+  "away_team": "Man United",
+  "prediction": "home_win",
+  "probabilities": {
+    "home_win": 0.7292485752783131
+    "draw": 0.1653737863075396,
+    "away_win": 0.1053776443746117,
+  }
+}
+```
