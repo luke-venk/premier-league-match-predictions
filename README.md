@@ -8,7 +8,7 @@ This study aims to improve upon prior approaches of using machine learning for p
 
 ## External Resources
 This README is designed to be lightweight, providing the user with just the information the user needs to use the application. For a more detailed explanation of this project, please refer to one of the following:
-- [Report](TODO)
+- [Report](https://github.com/luke-venk/premier-league-match-predictions/blob/main/reports/project_report.pdf)
 - [Presentation Slides](https://docs.google.com/presentation/d/10yDmUe-KwvAvrPvzXGmXdAeF3LhDp9UKxyo9cHAXkhM/edit?slide=id.p#slide=id.p)
 - [Video Demonstration](https://youtu.be/VFaKTJ81YvU)
 
